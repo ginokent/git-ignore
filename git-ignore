@@ -1,0 +1,146 @@
+#!/usr/bin/env bash
+# LICENSE: https://github.com/hakadoriya/gitignore/blob/HEAD/LICENSE
+set -E -e -o pipefail -u
+
+prog_name="git-ignore"
+
+SubcommandUsageAndReturn() {
+  cat <<EOF
+${prog_name:?} - Create a .gitignore file for the specified language.
+                 ref: https://github.com/github/gitignore
+
+Usage:
+  ${prog_name:?} [SUBCOMMAND]
+
+SUBCOMMAND:
+    create, c, new
+        Create a .gitignore file for the specified language.
+        Usage:
+          ${prog_name:?} new [LANGUAGES]
+    self-update
+        Update this script itself.
+        Usage:
+          ${prog_name:?} self-update
+    help, usage
+        Show this help message.
+        Usage:
+          ${prog_name:?} help
+
+LANGUAGES:
+    Android (android)
+    C (c)
+    C++ (cp, cpp, cx, cxx)
+    C# (csharp, cs)
+    Go (go, golang)
+    Kotlin (kotlin, kt)
+    Node (javascript, js, node, nodejs, ts, typescript)
+    Python (python, py)
+    Rails (rails)
+    Ruby (ruby, rb)
+    Rust (rust, rs)
+    Swift (swift)
+    Terraform (terraform, tf)
+    Unity (unity)
+    UnrealEngine (unrealengine)
+    and more...
+EOF
+  return "${1:-0}"
+}
+
+SubcommandCreateGitignore() {
+  local language="${1:-}"
+
+  if [[ "${language:-}" = "" ]]; then
+    SubcommandUsageAndReturn 1
+  fi
+
+  case "${language:-}" in
+  "Android" | "android")
+    local gitignore_url="https://raw.githubusercontent.com/github/gitignore/refs/heads/main/Android.gitignore"
+    ;;
+  "C" | "c")
+    local gitignore_url="https://raw.githubusercontent.com/github/gitignore/refs/heads/main/C.gitignore"
+    ;;
+  "C++" | "cpp" | "cp" | "cx" | "cxx")
+    local gitignore_url="https://raw.githubusercontent.com/github/gitignore/refs/heads/main/C++.gitignore"
+    ;;
+  "C#" | "csharp" | "cs")
+    local gitignore_url="https://raw.githubusercontent.com/github/gitignore/refs/heads/main/C%23.gitignore"
+    ;;
+  "Go" | "go" | "golang")
+    local gitignore_url="https://raw.githubusercontent.com/github/gitignore/refs/heads/main/Go.gitignore"
+    ;;
+  "Kotlin" | "kotlin" | "kt")
+    local gitignore_url="https://raw.githubusercontent.com/github/gitignore/refs/heads/main/Kotlin.gitignore"
+    ;;
+  "Node" | "javascript" | "js" | "node" | "nodejs" | "ts" | "typescript")
+    local gitignore_url="https://raw.githubusercontent.com/github/gitignore/refs/heads/main/Node.gitignore"
+    ;;
+  "Python" | "python" | "py")
+    local gitignore_url="https://raw.githubusercontent.com/github/gitignore/refs/heads/main/Python.gitignore"
+    ;;
+  "Rails" | "rails")
+    local gitignore_url="https://raw.githubusercontent.com/github/gitignore/refs/heads/main/Rails.gitignore"
+    ;;
+  "Ruby" | "ruby" | "rb")
+    local gitignore_url="https://raw.githubusercontent.com/github/gitignore/refs/heads/main/Ruby.gitignore"
+    ;;
+  "Rust" | "rust" | "rs")
+    local gitignore_url="https://raw.githubusercontent.com/github/gitignore/refs/heads/main/Rust.gitignore"
+    ;;
+  "Swift" | "swift")
+    local gitignore_url="https://raw.githubusercontent.com/github/gitignore/refs/heads/main/Swift.gitignore"
+    ;;
+  "Terraform" | "terraform" | "tf")
+    local gitignore_url="https://raw.githubusercontent.com/github/gitignore/refs/heads/main/Terraform.gitignore"
+    ;;
+  "Unity" | "unity")
+    local gitignore_url="https://raw.githubusercontent.com/github/gitignore/refs/heads/main/Unity.gitignore"
+    ;;
+  "UnrealEngine" | "unrealengine")
+    local gitignore_url="https://raw.githubusercontent.com/github/gitignore/refs/heads/main/UnrealEngine.gitignore"
+    ;;
+  *)
+    local gitignore_url="https://raw.githubusercontent.com/github/gitignore/refs/heads/main/${language:?}.gitignore"
+    ;;
+  esac
+
+  curl -fLRSs "${gitignore_url:?}" || SubcommandUsageAndReturn 1
+}
+
+SubcommandSelfUpdate() {
+  local self_update_url="https://raw.githubusercontent.com/hakadoriya/git-ignore/HEAD/${exe_filename:?}"
+  local script_file_path="${0:?}"
+  local tmp_dir=/tmp/git-ignore
+  local tmp_file=${tmp_dir:?}/${exe_filename:?}
+  local backup_file="${tmp_file:?}.backup"
+  LogshNotice "Download ${self_update_url:?}"
+  mkdir -p "${tmp_dir:?}"
+  DownloadURL "${self_update_url:?}" "${tmp_file:?}"
+  LogshNotice "Take backup ${script_file_path:?} to ${backup_file:?}"
+  LogshExec mv -f "${script_file_path:?}" "${backup_file:?}"
+  LogshNotice "Show the changes between old and new"
+  LogshExec diff -u "${backup_file:?}" "${tmp_file:?}" || true
+  LogshNotice "Update ${script_file_path:?} to ${self_update_url:?}"
+  LogshExec chmod +x "${tmp_file:?}"
+  LogshExec mv -f "${tmp_file:?}" "${script_file_path:?}"
+}
+
+Main() {
+  local subcmd="${1:-}"
+
+  case "${subcmd:-}" in
+  "create" | "c" | "new")
+    shift
+    SubcommandCreateGitignore "$@"
+    ;;
+  "help" | "usage")
+    SubcommandUsageAndReturn 0
+    ;;
+  *)
+    SubcommandUsageAndReturn 1
+    ;;
+  esac
+}
+
+Main "$@"
