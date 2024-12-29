@@ -1,30 +1,45 @@
 #!/usr/bin/env bash
-# LICENSE: https://github.com/hakadoriya/gitignore/blob/HEAD/LICENSE
+# LICENSE: https://github.com/hakadoriya/git-ignore/blob/HEAD/LICENSE
 set -E -e -o pipefail -u
 
-prog_name="git-ignore"
+exe_filename="git-ignore"
+
+# LICENSE: https://github.com/hakadoriya/log.sh/blob/HEAD/LICENSE
+# Common
+if [ "${LOGSH_COLOR:-}" ] || [ -t 2 ] ; then LOGSH_COLOR=true; else LOGSH_COLOR=''; fi
+_logshRFC3339() { date "+%Y-%m-%dT%H:%M:%S%z" | sed "s/\(..\)$/:\1/"; }
+_logshCmd() { for a in "$@"; do if echo "${a:-}" | grep -Eq "[[:blank:]]"; then printf "'%s' " "${a:-}"; else printf "%s " "${a:-}"; fi; done | sed "s/ $//"; }
+# Color
+LogshDefault() { test "  ${LOGSH_LEVEL:-0}" -gt 000 || echo "$*" | awk "{print   \"$(_logshRFC3339) [${LOGSH_COLOR:+\\033[0;35m}  DEFAULT${LOGSH_COLOR:+\\033[0m}] \"\$0\"\"}" 1>&2; }
+LogshDebug() { test "    ${LOGSH_LEVEL:-0}" -gt 100 || echo "$*" | awk "{print   \"$(_logshRFC3339) [${LOGSH_COLOR:+\\033[0;34m}    DEBUG${LOGSH_COLOR:+\\033[0m}] \"\$0\"\"}" 1>&2; }
+LogshInfo() { test "     ${LOGSH_LEVEL:-0}" -gt 200 || echo "$*" | awk "{print   \"$(_logshRFC3339) [${LOGSH_COLOR:+\\033[0;32m}     INFO${LOGSH_COLOR:+\\033[0m}] \"\$0\"\"}" 1>&2; }
+LogshNotice() { test "   ${LOGSH_LEVEL:-0}" -gt 300 || echo "$*" | awk "{print   \"$(_logshRFC3339) [${LOGSH_COLOR:+\\033[0;36m}   NOTICE${LOGSH_COLOR:+\\033[0m}] \"\$0\"\"}" 1>&2; }
+LogshWarn() { test "     ${LOGSH_LEVEL:-0}" -gt 400 || echo "$*" | awk "{print   \"$(_logshRFC3339) [${LOGSH_COLOR:+\\033[0;33m}     WARN${LOGSH_COLOR:+\\033[0m}] \"\$0\"\"}" 1>&2; }
+LogshWarning() { test "  ${LOGSH_LEVEL:-0}" -gt 400 || echo "$*" | awk "{print   \"$(_logshRFC3339) [${LOGSH_COLOR:+\\033[0;33m}  WARNING${LOGSH_COLOR:+\\033[0m}] \"\$0\"\"}" 1>&2; }
+LogshError() { test "    ${LOGSH_LEVEL:-0}" -gt 500 || echo "$*" | awk "{print   \"$(_logshRFC3339) [${LOGSH_COLOR:+\\033[0;31m}    ERROR${LOGSH_COLOR:+\\033[0m}] \"\$0\"\"}" 1>&2; }
+LogshExec() { LogshInfo "$ $(_logshCmd "$@")" && "$@"; }
 
 SubcommandUsageAndReturn() {
   cat <<EOF
-${prog_name:?} - Create a .gitignore file for the specified language.
+${exe_filename:?} - Create a .gitignore file for the specified language.
                  ref: https://github.com/github/gitignore
 
 Usage:
-  ${prog_name:?} [SUBCOMMAND]
+  ${exe_filename:?} [SUBCOMMAND]
 
 SUBCOMMAND:
     create, c, new
         Create a .gitignore file for the specified language.
         Usage:
-          ${prog_name:?} new [LANGUAGES]
+          ${exe_filename:?} new [LANGUAGES]
     self-update
         Update this script itself.
         Usage:
-          ${prog_name:?} self-update
+          ${exe_filename:?} self-update
     help, usage
         Show this help message.
         Usage:
-          ${prog_name:?} help
+          ${exe_filename:?} help
 
 LANGUAGES:
     Android (android)
@@ -116,7 +131,7 @@ SubcommandSelfUpdate() {
   local backup_file="${tmp_file:?}.backup"
   LogshNotice "Download ${self_update_url:?}"
   mkdir -p "${tmp_dir:?}"
-  DownloadURL "${self_update_url:?}" "${tmp_file:?}"
+  curl -LRSs "${self_update_url:?}" -o "${tmp_file:?}"
   LogshNotice "Take backup ${script_file_path:?} to ${backup_file:?}"
   LogshExec mv -f "${script_file_path:?}" "${backup_file:?}"
   LogshNotice "Show the changes between old and new"
@@ -133,6 +148,9 @@ Main() {
   "create" | "c" | "new")
     shift
     SubcommandCreateGitignore "$@"
+    ;;
+  "self-update")
+    SubcommandSelfUpdate
     ;;
   "help" | "usage")
     SubcommandUsageAndReturn 0
