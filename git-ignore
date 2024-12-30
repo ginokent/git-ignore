@@ -22,7 +22,7 @@ LogshExec() { LogshInfo "$ $(_logshCmd "$@")" && "$@"; }
 SubcommandUsageAndReturn() {
   cat <<EOF
 ${exe_filename:?} - Create a .gitignore file for the specified language.
-                 ref: https://github.com/github/gitignore
+             (ref: https://github.com/github/gitignore)
 
 Usage:
   ${exe_filename:?} [SUBCOMMAND]
@@ -31,7 +31,7 @@ SUBCOMMAND:
     create, c, new
         Create a .gitignore file for the specified language.
         Usage:
-          ${exe_filename:?} new [LANGUAGES]
+          ${exe_filename:?} create [LANGUAGE]
     self-update
         Update this script itself.
         Usage:
@@ -41,7 +41,7 @@ SUBCOMMAND:
         Usage:
           ${exe_filename:?} help
 
-LANGUAGES:
+LANGUAGE:
     Android (android)
     C (c)
     C++ (cp, cpp, cx, cxx)
